@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Your Matches</title>
+
+   <!-- font awesome cdn link  -->
+   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css">
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+   <!-- custom css file link  -->
+   <link rel="stylesheet" href="static/css/style1.css">
+
+</head>
+<body>
+
+<header class="header">
+   
+   <section class="flex">
+
+      <a href="{% url 'index'%}" class="logo"><img src="static/images/logo.png" width="250" height="70" alt="LingoPal Logo"></a>
+
+      <form action="search.html" method="post" class="search-form">
+         <input type="text" name="search_box" required placeholder="search courses..." maxlength="100">
+         <button type="submit" class="fas fa-search"></button>
+      </form>
+
+      <div class="icons">
+         <div id="menu-btn" class="fas fa-bars"></div>
+         <div id="search-btn" class="fas fa-search"></div>
+         <div id="user-btn" class="fas fa-user"></div>
+         <div id="toggle-btn" class="fas fa-moon"></div>
+      </div>
+
+      <div class="profile">
+         <img src="{{profile_pic_path}}" class="image" alt="Profile Picture">
+         <h3 class="name">{{name}}</h3>
+         <p class="role">{{username}}</p>
+         <a href="{% url 'profile_attempt'%}" class="btn">view profile</a>
+         <div class="flex-btn">
+            <a href="{% url 'logout_attempt'%}" class="option-btn">logout</a>
+            <a href="{% url 'register_attempt'%}" class="option-btn">register</a>
+         </div>
+      </div>
+
+   </section>
+
+</header>   
+
+<div class="side-bar">
+
+   <div id="close-btn">
+      <i class="fas fa-times"></i>
+   </div>
+
+   <div class="profile">
+      <img src="{{profile_pic_path}}" class="image" alt="Profile Picture">
+      <h3 class="name">{{name}}</h3>
+      <p class="role">{{username}}</p>
+      <a href="{% url 'profile_attempt'%}" class="btn">view profile</a>
+   </div>
+
+   <nav class="navbar">
+      <a href="{% url 'home_attempt'%}"><i class="fas fa-home"></i><span>Home</span></a>
+      <a href="{% url 'resources_attempt'%}"><i class="fas fa-graduation-cap"></i><span>Resources</span></a>
+      <a href="{% url 'matches_attempt'%}"><i class="fas fa-chalkboard-user"></i><span>Matches</span></a>
+      <a href="{% url 'feedback_attempt'%}"><i class="fas fa-headset"></i><span>Support/Contact us</span></a>
+      <a href="{% url 'settings_attempt'%}"><i class="fas fa-gear"></i><span>Settings</span></a>
+   </nav>
+
+</div>
+
+<section class="teachers">
+
+   <h1 class="heading">View your matches</h1>
+
+   <form action="" method="post" class="search-tutor">
+      <input type="text" name="search_box" placeholder="search your matches..." required maxlength="100">
+      <button type="submit" class="fas fa-search" name="search_tutor"></button>
+   </form>
+
+   <div class="box-container">
+    {% for matched_data in matched_usernames %}
+    <div class="box">
+        <div class="tutor">
+            <img src="{{ matched_data.5 }}" alt="">
+            <div>
+                <h3>{{ matched_data.0 }}</h3>
+                <span>{{ matched_data.1 }}</span>
+            </div>
+        </div>
+        {% if matched_data.2 %}
+            <p>Languages known:
+                <span>
+                    {% for language_known in matched_data.2 %}
+                        {{ language_known }}
+                        {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </span>
+            </p>
+        {% endif %}
+        <p>
+            {% if matched_data.3 %}
+                Languages to learn:
+                <span>{{ matched_data.3 }}</span>
+            {% endif %}
+        </p>
+        <p>
+            {% if matched_data.4 %}
+                Languages to teach:
+                <span>{{ matched_data.4 }}</span>
+            {% endif %}
+        </p>
+        
+        {% for request in received_requests %}
+               {% if request.sender_username == matched_data.0 %}
+                  <div>
+                     <!-- Display accept and decline buttons -->
+                     <a href="#" data-send-name= "{{ matched_data.0 }}" class="accept-btn">Accept</a>
+                     <a href="#" data-send-name= "{{ matched_data.0 }}" class="decline-btn">Decline</a>
+                  </div>
+               {% else %}
+               <a href="#" class="inline-btn" data-receiver-username="{{ matched_data.0 }}">Send Request</a>
+            {% endif %}
+            {% endfor %}
+            <!-- If no request is received, display send request button -->
+            {% if not received_requests %}
+               <a href="#" class="inline-btn" data-receiver-username="{{ matched_data.0 }}">Send Request</a>
+            {% endif %}
+         </div>
+         {% endfor %}
+         
+   </div>
+
+</section>
+
+<style>
+    /* Add this CSS to style the disabled button */
+    .inline-btn.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        /* Add any additional styling for the disabled state here */
+    }
+ </style>
+
+<script>
+
+$(document).ready(function() {
+    // Function to handle sending requests
+    $(".inline-btn").each(function() {
+        var receiverUsername = $(this).data('receiver-username');
+        var buttonId = "button_" + receiverUsername;
+        var isDisabled = localStorage.getItem(buttonId);
+        if (isDisabled === "true") {
+            $(this).text("Request Sent").addClass("disabled").attr("disabled", true);
+        }
+    });
+
+    $(".inline-btn").click(function(e) {
+        e.preventDefault(); // Prevent the default form submission
+        var receiverUsername = $(this).data('receiver-username'); // Retrieve the receiver's username from data attribute
+        var buttonId = "button_" + receiverUsername;
+        localStorage.setItem(buttonId, "true"); // Store the disabled state in local storage
+        $(this).text("Request Sent").addClass("disabled").attr("disabled", true); // Change button text, disable it, and add "disabled" class
+
+        // Serialize the data to be sent via AJAX
+        var formData = {
+            'receiver_username': receiverUsername,
+            'csrfmiddlewaretoken': '{{ csrf_token }}' // Add CSRF token for security
+        };
+
+        // Send the receiver's username to the backend via AJAX
+        $.ajax({
+            type: "POST",
+            url: "/send_request",
+            data: formData,
+            success: function(response) {
+                // Handle success response if needed
+                console.log("Request sent successfully");
+            },
+            error: function(xhr, status, error) {
+                // Handle error response if needed
+                console.error("Error sending request:", error);
+            }
+        });
+    });
+});
+
+        // Restore button states on page refresh
+        $(window).on('load', function() {
+            $(".inline-btn").each(function() {
+                var receiverUsername = $(this).data('receiver-username');
+                var buttonId = "button_" + receiverUsername;
+                localStorage.removeItem(buttonId); // Remove the stored disabled state
+                $(this).text("Send Request").removeClass("disabled").removeAttr("disabled"); // Reset button text, remove "disabled" class and attribute
+            });
+
+    
+        // Function to handle accepting a request
+        $(".accept-btn").click(function(e) {
+            e.preventDefault();
+            var send_name = $(this).data('send-name');
+            var formData = {
+                'send_name': send_name,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            };
+
+            var parentContainer = $(this).parent(); // Get the parent container
+            $.ajax({
+                type: "POST",
+                url: "/accept_request",
+                data: formData,
+                success: function(response) {
+                    console.log("Request accepted successfully");
+                    parentContainer.remove(); // Remove the parent container
+                    displayStatus(parentContainer, "Accepted"); // Display status message
+                    // Update UI if necessary
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error accepting request:", error);
+                }
+            });
+        });
+
+        // Function to handle declining a request
+        $(".decline-btn").click(function(e) {
+            e.preventDefault();
+            var send_name = $(this).data('send-name');
+            var formData = {
+                'send_name': send_name,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            };
+
+            var parentContainer = $(this).parent(); // Get the parent container
+            $.ajax({
+                type: "POST",
+                url: "/decline_request",
+                data: formData,
+                success: function(response) {
+                    console.log("Request declined successfully");
+                    parentContainer.remove(); // Remove the parent container
+                    displayStatus(parentContainer, "Declined"); // Display status message
+                    // Update UI if necessary
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error declining request:", error);
+                }
+            });
+            // Function to display status message
+        function displayStatus(parentContainer, status) {
+            var statusMessage = $("<p>").text(status);
+            parentContainer.after(statusMessage);
+        }
+        });
+
+
+    });
+    
+
+</script>
+
+
+
+
+<!-- custom js file link  -->
+<script src="static/js/script1.js"></script>
+
+</body>
+</html>
